@@ -39,7 +39,7 @@ RAGificial is a web app that lets you upload a PDF and ask natural language ques
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/yourusername/ragificial.git
+git clone https://github.com/NAGA612005/ragificial.git
 cd ragificial
 pip install -r requirements.txt
 
