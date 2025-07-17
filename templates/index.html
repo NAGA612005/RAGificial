@@ -1,48 +1,102 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>RAGificial – Chat with Your PDFs using Gemini + RAG</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-</head>
-<body>
-    <h1 style="text-align:center; color:#2c3e50; font-family: 'Inter', sans-serif;">RAGificial – Chat with Your PDFs using Gemini + RAG</h1>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modern PDF Chat – AI-Powered Document Interaction</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1>RAGificial</h1>
+        <p>Chat with Your PDFs using AI-Powered Document Interaction</p>
+      </header>
 
-    <h2>Upload PDF</h2>
-    <form id="upload-form" enctype="multipart/form-data">
-        <input type="file" name="pdf" required>
-        <button type="submit">Upload</button>
-    </form>
+      <section class="card upload-section">
+        <h2>Upload PDF</h2>
+        <form id="upload-form" enctype="multipart/form-data">
+          <label for="pdf-upload" class="file-input-label">
+            <input type="file" name="pdf" id="pdf-upload" required />
+            <span class="file-input-text">Choose File</span>
+          </label>
+          <button type="submit" class="btn btn-primary">Upload PDF</button>
+        </form>
+      </section>
 
-    <h2>Ask Question</h2>
-    <input type="text" id="question" placeholder="Ask something from PDF...">
-    <button onclick="ask()">Ask</button>
-
-    <p id="response"></p>
+      <section class="card ask-section">
+        <h2>Ask Question</h2>
+        <div class="input-group">
+          <input
+            type="text"
+            id="question"
+            placeholder="Ask something from the PDF..."
+          />
+          <button onclick="ask()" class="btn btn-secondary">Ask</button>
+        </div>
+        <div id="response" class="response-area">
+          <p>Your AI response will appear here.</p>
+        </div>
+        <div id="loading-spinner" class="loading-spinner"></div>
+      </section>
+    </div>
 
     <script>
-        document.getElementById("upload-form").onsubmit = async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const res = await fetch("/upload", {
-                method: "POST",
-                body: formData
-            });
-            const data = await res.json();
-            alert(data.message || data.error);
-        };
-
-        async function ask() {
-            const question = document.getElementById("question").value;
-            const res = await fetch("/ask", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({question})
-            });
-            const data = await res.json();
-            document.getElementById("response").innerText = data.answer || data.error;
+      document.getElementById("upload-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        try {
+          const res = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await res.json();
+          alert(data.message || data.error);
+        } catch (error) {
+          alert("Error uploading file: " + error.message);
         }
-    </script>
+      };
 
-</body>
+      async function ask() {
+        const questionInput = document.getElementById("question");
+        const responseArea = document.getElementById("response");
+        const loadingSpinner = document.getElementById("loading-spinner");
+        const question = questionInput.value;
+
+        if (!question.trim()) {
+          responseArea.innerText = "Please enter a question.";
+          return;
+        }
+
+        responseArea.innerText = "";
+        loadingSpinner.style.display = "block";
+
+        try {
+          const res = await fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question }),
+          });
+          const data = await res.json();
+          responseArea.innerText =
+            data.answer || data.error || "No answer received.";
+        } catch (error) {
+          responseArea.innerText = "Error asking question: " + error.message;
+        } finally {
+          loadingSpinner.style.display = "none"; 
+        }
+      }
+
+      document
+        .getElementById("pdf-upload")
+        .addEventListener("change", function () {
+          const fileName = this.files[0] ? this.files[0].name : "Choose File";
+          document.querySelector(".file-input-text").textContent = fileName;
+        });
+    </script>
+  </body>
 </html>
