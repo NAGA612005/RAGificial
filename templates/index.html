@@ -9,11 +9,12 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.0/marked.min.js"></script>
   </head>
   <body>
     <div class="container">
       <header class="header">
-        <h1>RAGificial</h1>
+        <a href="/"><h1>RAGificial</h1></a>
         <p>Chat with Your PDFs using AI-Powered Document Interaction</p>
       </header>
 
@@ -28,7 +29,7 @@
         </form>
       </section>
 
-      <section class="card ask-section">
+      <section class="card ask-section" id="ask-section" style="display: none;">
         <h2>Ask Question</h2>
         <div class="input-group">
           <input
@@ -45,10 +46,34 @@
       </section>
     </div>
 
+    <div id="upload-loading-modal" class="loading-modal">
+      <div class="loading-modal-content">
+        <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading..." class="loading-gif" />
+        <p>Uploading PDF...</p>
+      </div>
+    </div>
+
     <script>
+      async function checkPdfStatus() {
+        try {
+          const res = await fetch("/status");
+          const data = await res.json();
+          document.getElementById("ask-section").style.display = data.has_pdf ? "block" : "none";
+        } catch (error) {
+          console.error("Error checking PDF status:", error);
+        }
+      }
+
+      // Check PDF status on page load
+      window.onload = checkPdfStatus;
+
       document.getElementById("upload-form").onsubmit = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
+        const loadingModal = document.getElementById("upload-loading-modal");
+        
+        loadingModal.style.display = "flex";
+
         try {
           const res = await fetch("/upload", {
             method: "POST",
@@ -56,8 +81,13 @@
           });
           const data = await res.json();
           alert(data.message || data.error);
+          if (data.message) {
+            document.getElementById("ask-section").style.display = "block";
+          }
         } catch (error) {
           alert("Error uploading file: " + error.message);
+        } finally {
+          loadingModal.style.display = "none";
         }
       };
 
@@ -68,11 +98,11 @@
         const question = questionInput.value;
 
         if (!question.trim()) {
-          responseArea.innerText = "Please enter a question.";
+          responseArea.innerHTML = "<p>Please enter a question.</p>";
           return;
         }
 
-        responseArea.innerText = "";
+        responseArea.innerHTML = "";
         loadingSpinner.style.display = "block";
 
         try {
@@ -82,12 +112,16 @@
             body: JSON.stringify({ question }),
           });
           const data = await res.json();
-          responseArea.innerText =
-            data.answer || data.error || "No answer received.";
+          if (data.answer) {
+            // Render response as Markdown
+            responseArea.innerHTML = marked.parse(data.answer);
+          } else {
+            responseArea.innerHTML = `<p>${data.error || "No answer received."}</p>`;
+          }
         } catch (error) {
-          responseArea.innerText = "Error asking question: " + error.message;
+          responseArea.innerHTML = `<p>Error asking question: ${error.message}</p>`;
         } finally {
-          loadingSpinner.style.display = "none"; 
+          loadingSpinner.style.display = "none";
         }
       }
 
