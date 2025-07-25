@@ -8,3 +8,4 @@ google-generativeai
 faiss-cpu
 pdfplumber
 nest_asyncio
+pandas
